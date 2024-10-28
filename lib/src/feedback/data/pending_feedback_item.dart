@@ -6,6 +6,7 @@ import 'dart:ui';
 
 import 'package:wiredash/src/_feedback.dart';
 import 'package:wiredash/src/_wiredash_internal.dart';
+import 'package:wiredash/src/core/network/serializers.dart';
 import 'package:wiredash/src/feedback/data/pending_feedback_item_parser_v2.dart';
 import 'package:wiredash/src/feedback/data/pending_feedback_item_parser_v3.dart';
 
