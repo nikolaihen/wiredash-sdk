@@ -4,6 +4,7 @@ import 'dart:ui' as ui;
 import 'package:collection/collection.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:wiredash/src/_feedback.dart';
 import 'package:wiredash/src/_ps.dart';
 import 'package:wiredash/src/_wiredash_internal.dart';
@@ -54,6 +55,7 @@ class Wiredash extends StatefulWidget {
     this.theme,
     this.feedbackOptions,
     this.psOptions,
+    this.getSharedPreferences,
     this.padding,
     this.collectMetaData,
     required this.child,
@@ -112,6 +114,11 @@ class Wiredash extends StatefulWidget {
 
   /// Customize when to show the promoter score flow
   final PsOptions? psOptions;
+
+  /// An optional function to provide your own SharedPreferences instance.
+  ///
+  /// If not provided, one will be created with SharedPreferences.getInstance()
+  final Future<SharedPreferences> Function()? getSharedPreferences;
 
   /// Default visual properties, like colors and fonts for the Wiredash bottom
   /// sheet and the screenshot capture UI.
@@ -259,7 +266,7 @@ class Wiredash extends StatefulWidget {
 class WiredashState extends State<Wiredash> {
   final GlobalKey _appKey = GlobalKey(debugLabel: 'app');
 
-  final WiredashServices _services = WiredashServices();
+  late final WiredashServices _services;
 
   late final WiredashBackButtonDispatcher _backButtonDispatcher;
 
@@ -279,6 +286,8 @@ class WiredashState extends State<Wiredash> {
   @override
   void initState() {
     super.initState();
+    _services = WiredashServices(getSharedPreferences: widget.getSharedPreferences);
+
     _services.projectCredentialValidator.validate(
       projectId: widget.projectId,
       secret: widget.secret,
@@ -346,8 +355,7 @@ class WiredashState extends State<Wiredash> {
       _onProjectEnvChanged();
     }
 
-    if (oldWidget.options?.localizationDelegate !=
-        widget.options?.localizationDelegate) {
+    if (oldWidget.options?.localizationDelegate != widget.options?.localizationDelegate) {
       _verifySyncLocalizationsDelegate();
     }
   }
@@ -385,9 +393,7 @@ class WiredashState extends State<Wiredash> {
       return app;
     }
 
-    final theme = _services.wiredashModel.themeFromContext ??
-        widget.theme ??
-        WiredashThemeData();
+    final theme = _services.wiredashModel.themeFromContext ?? widget.theme ?? WiredashThemeData();
 
     final Widget flow = () {
       final active = _services.wiredashModel.activeFlow;
@@ -421,8 +427,7 @@ class WiredashState extends State<Wiredash> {
           builder: (context) {
             // Check if we have a Localizations widget as parent. This works because
             // WidgetsLocalizations is a required for construction
-            final parentLocalization =
-                Localizations.of(context, WidgetsLocalizations);
+            final parentLocalization = Localizations.of(context, WidgetsLocalizations);
 
             final wiredashL10nDelegate = widget.options?.localizationDelegate;
             final delegates = [
@@ -434,8 +439,7 @@ class WiredashState extends State<Wiredash> {
 
               // WidgetsLocalizations is required. Unless we know it already
               // exists, add it here
-              if (parentLocalization == null)
-                DefaultWidgetsLocalizations.delegate,
+              if (parentLocalization == null) DefaultWidgetsLocalizations.delegate,
             ];
 
             if (parentLocalization == null) {
@@ -584,9 +588,7 @@ void validateEnvironment(String environment) {
     );
   }
 
-  if (environment.contains('ä') ||
-      environment.contains('ö') ||
-      environment.contains('ü')) {
+  if (environment.contains('ä') || environment.contains('ö') || environment.contains('ü')) {
     throw ArgumentError.value(
       environment,
       'environment',

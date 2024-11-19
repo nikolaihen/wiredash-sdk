@@ -34,7 +34,7 @@ import 'package:wiredash/wiredash.dart';
 
 /// Internal service locator
 class WiredashServices extends ChangeNotifier {
-  factory WiredashServices() {
+  factory WiredashServices({Future<SharedPreferences> Function()? getSharedPreferences}) {
     WiredashServices? services;
     assert(
       () {
@@ -45,7 +45,10 @@ class WiredashServices extends ChangeNotifier {
       }(),
     );
 
-    return services ?? WiredashServices.setup(registerProdWiredashServices);
+    return services ??
+        WiredashServices.setup(
+          (sl) => registerProdWiredashServices(sl, getSharedPreferences: getSharedPreferences),
+        );
   }
 
   WiredashServices.setup(
@@ -143,11 +146,20 @@ class WiredashServices extends ChangeNotifier {
   }
 }
 
-void registerProdWiredashServices(WiredashServices sl) {
+void registerProdWiredashServices(
+  WiredashServices sl, {
+  Future<SharedPreferences> Function()? getSharedPreferences,
+}) {
   sl.inject<WiredashServices>((_) => sl);
 
   sl.inject<Future<SharedPreferences> Function()>(
-    (_) => SharedPreferences.getInstance,
+    (_) {
+      if (getSharedPreferences != null) {
+        return getSharedPreferences;
+      }
+
+      return SharedPreferences.getInstance;
+    },
   );
 
   sl.inject<Wiredash?>((_) {
@@ -259,12 +271,10 @@ void registerProdWiredashServices(WiredashServices sl) {
       final storage = PendingFeedbackItemStorage(
         fileSystem: fileSystem,
         sharedPreferencesProvider: sl.sharedPreferencesProvider,
-        dirPathProvider: () async =>
-            (await getApplicationDocumentsDirectory()).path,
+        dirPathProvider: () async => (await getApplicationDocumentsDirectory()).path,
         wuidGenerator: sl.wuidGenerator,
       );
-      final retryingFeedbackSubmitter =
-          RetryingFeedbackSubmitter(fileSystem, storage, () => sl.api);
+      final retryingFeedbackSubmitter = RetryingFeedbackSubmitter(fileSystem, storage, () => sl.api);
       return retryingFeedbackSubmitter;
     },
   );
