@@ -12,6 +12,7 @@ import 'package:wiredash/src/analytics/event_submitter.dart';
 import 'package:wiredash/src/core/lifecycle/lifecycle_notifier.dart';
 import 'package:wiredash/src/core/options/environment_detector.dart';
 import 'package:wiredash/src/core/project_credential_validator.dart';
+import 'package:wiredash/src/core/services/local_storage.dart';
 import 'package:wiredash/src/core/services/streampod.dart';
 import 'package:wiredash/src/core/sync/app_telemetry_job.dart';
 import 'package:wiredash/src/core/sync/event_upload_job.dart';
@@ -34,7 +35,9 @@ import 'package:wiredash/wiredash.dart';
 
 /// Internal service locator
 class WiredashServices extends ChangeNotifier {
-  factory WiredashServices() {
+  factory WiredashServices({
+    LocalStorage? customLocalStorage,
+  }) {
     WiredashServices? services;
     assert(
       () {
@@ -45,7 +48,10 @@ class WiredashServices extends ChangeNotifier {
       }(),
     );
 
-    return services ?? WiredashServices.setup(registerProdWiredashServices);
+    return services ??
+        WiredashServices.setup(
+          (sl) => registerProdWiredashServices(sl, customLocalStorage: customLocalStorage),
+        );
   }
 
   WiredashServices.setup(
@@ -120,6 +126,12 @@ class WiredashServices extends ChangeNotifier {
     return _locator.get();
   }
 
+  Future<LocalStorage> Function() get localStorageProvider {
+    // explicitly using get instead of watch, because it is a factory not an
+    // object that returns the correct object for every call
+    return _locator.get();
+  }
+
   void updateWidget(Wiredash? wiredashWidget) {
     inject<Wiredash?>((_) => wiredashWidget);
   }
@@ -143,11 +155,27 @@ class WiredashServices extends ChangeNotifier {
   }
 }
 
-void registerProdWiredashServices(WiredashServices sl) {
+/// If [customLocalStorage] is null, shared preferences is used.
+///
+void registerProdWiredashServices(
+  WiredashServices sl, {
+  LocalStorage? customLocalStorage,
+}) {
   sl.inject<WiredashServices>((_) => sl);
 
   sl.inject<Future<SharedPreferences> Function()>(
     (_) => SharedPreferences.getInstance,
+  );
+
+  sl.inject<Future<LocalStorage> Function()>(
+    (_) => () async {
+      if (customLocalStorage != null) {
+        return customLocalStorage;
+      }
+
+      final sharedPrefs = await sl.sharedPreferencesProvider();
+      return SharedPreferencesStorage(sharedPrefs);
+    },
   );
 
   sl.inject<Wiredash?>((_) {
@@ -162,8 +190,8 @@ void registerProdWiredashServices(WiredashServices sl) {
   });
   sl.inject<WuidGenerator>(
     (_) {
-      final generator = SharedPrefsWuidGenerator(
-        sharedPrefsProvider: sl.sharedPreferencesProvider,
+      final generator = LocalStorageWuidGenerator(
+        localStorageProvider: sl.localStorageProvider,
       );
       generator.addOnKeyCreatedListener((key) {
         if (key == '_wiredashAppUsageID') {
@@ -177,10 +205,10 @@ void registerProdWiredashServices(WiredashServices sl) {
     (_) => const ProjectCredentialValidator(),
   );
   sl.inject<AppTelemetry>(
-    (_) => PersistentAppTelemetry(sl.sharedPreferencesProvider),
+    (_) => PersistentAppTelemetry(sl.localStorageProvider),
   );
   sl.inject<WiredashTelemetry>(
-    (_) => PersistentWiredashTelemetry(sl.sharedPreferencesProvider),
+    (_) => PersistentWiredashTelemetry(sl.localStorageProvider),
   );
   sl.inject<PsTrigger>((_) {
     return PsTrigger(
@@ -191,7 +219,7 @@ void registerProdWiredashServices(WiredashServices sl) {
   });
   sl.inject<AnalyticsEventStore>((_) {
     return PersistentAnalyticsEventStore(
-      sharedPreferences: sl.sharedPreferencesProvider,
+      localStorageProvider: sl.localStorageProvider,
     );
   });
 
@@ -258,13 +286,11 @@ void registerProdWiredashServices(WiredashServices sl) {
       const fileSystem = LocalFileSystem();
       final storage = PendingFeedbackItemStorage(
         fileSystem: fileSystem,
-        sharedPreferencesProvider: sl.sharedPreferencesProvider,
-        dirPathProvider: () async =>
-            (await getApplicationDocumentsDirectory()).path,
+        localStorageProvider: sl.localStorageProvider,
+        dirPathProvider: () async => (await getApplicationDocumentsDirectory()).path,
         wuidGenerator: sl.wuidGenerator,
       );
-      final retryingFeedbackSubmitter =
-          RetryingFeedbackSubmitter(fileSystem, storage, () => sl.api);
+      final retryingFeedbackSubmitter = RetryingFeedbackSubmitter(fileSystem, storage, () => sl.api);
       return retryingFeedbackSubmitter;
     },
   );
@@ -299,7 +325,7 @@ void registerProdWiredashServices(WiredashServices sl) {
           apiProvider: () => sl.api,
           wuidGenerator: () => sl.wuidGenerator,
           metaDataCollector: () => sl.metaDataCollector,
-          sharedPreferencesProvider: sl.sharedPreferencesProvider,
+          localStorageProvider: sl.localStorageProvider,
           environmentDetector: () => sl.environmentDetector,
         ),
       );
@@ -311,7 +337,6 @@ void registerProdWiredashServices(WiredashServices sl) {
       );
 
       final job = EventUploadJob(
-        sharedPreferencesProvider: sl.sharedPreferencesProvider,
         eventSubmitter: () => sl.eventSubmitter,
       );
       engine.addJob('upload_events', job);

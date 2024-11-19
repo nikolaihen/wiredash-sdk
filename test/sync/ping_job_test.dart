@@ -30,7 +30,7 @@ void main() {
       final incrementalIdGenerator = IncrementalIdGenerator();
       return PingJob(
         apiProvider: () => api,
-        sharedPreferencesProvider: prefsProvider,
+        localStorageProvider: prefsProvider,
         metaDataCollector: () {
           return fakeMetaDataCollector;
         },
@@ -78,12 +78,10 @@ void main() {
       });
     });
 
-    test('ping sends buildVersion und buildNumber overrides from environment',
-        () {
+    test('ping sends buildVersion und buildNumber overrides from environment', () {
       fakeAsync((async) {
         final pingJob = createPingJob();
-        (pingJob.metaDataCollector() as FakeMetaDataCollector)
-            .buildInfoOverride = const BuildInfo(
+        (pingJob.metaDataCollector() as FakeMetaDataCollector).buildInfoOverride = const BuildInfo(
           buildVersion: '10.0.0',
           buildNumber: '1000',
           compilationMode: CompilationMode.profile,
@@ -149,7 +147,7 @@ void main() {
         };
         final pingJob = PingJob(
           apiProvider: () => api,
-          sharedPreferencesProvider: prefsProvider,
+          localStorageProvider: prefsProvider,
           metaDataCollector: () => FakeMetaDataCollector(),
           wuidGenerator: () => IncrementalIdGenerator(),
           environmentDetector: () => FixedEnvironmentDetector('prod'),
@@ -172,7 +170,7 @@ void main() {
         };
         final pingJob = PingJob(
           apiProvider: () => api,
-          sharedPreferencesProvider: prefsProvider,
+          localStorageProvider: prefsProvider,
           metaDataCollector: () => FakeMetaDataCollector(),
           wuidGenerator: () => IncrementalIdGenerator(),
           environmentDetector: () => FixedEnvironmentDetector('prod'),
@@ -220,8 +218,7 @@ class FakeMetaDataCollector with Fake implements MetaDataCollector {
       platformSupportedLocales: ['en_US', 'de_DE'],
       platformOS: 'android',
       platformBrightness: Brightness.dark,
-      gestureInsets:
-          WiredashWindowPadding(left: 0, top: 0, right: 0, bottom: 0),
+      gestureInsets: WiredashWindowPadding(left: 0, top: 0, right: 0, bottom: 0),
       viewPadding: WiredashWindowPadding(left: 0, top: 66, right: 0, bottom: 0),
       viewInsets: WiredashWindowPadding(left: 0, top: 0, right: 0, bottom: 685),
       physicalSize: Size(1280, 720),

@@ -2,25 +2,25 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:file/file.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:wiredash/src/_feedback.dart';
 import 'package:wiredash/src/_wiredash_internal.dart';
+import 'package:wiredash/src/core/services/local_storage.dart';
 
 /// A temporary place for [PersistedFeedbackItem] classes and user-generated
 /// screenshot to sit in until they get sent into the Wiredash console.
 class PendingFeedbackItemStorage {
   PendingFeedbackItemStorage({
     required FileSystem fileSystem,
-    required Future<SharedPreferences> Function() sharedPreferencesProvider,
+    required Future<LocalStorage> Function() localStorageProvider,
     required Future<String> Function() dirPathProvider,
     required WuidGenerator wuidGenerator,
   })  : _fs = fileSystem,
-        _sharedPreferences = sharedPreferencesProvider,
+        _localStorageProvider = localStorageProvider,
         _getScreenshotStorageDirectoryPath = dirPathProvider,
         _wuidGenerator = wuidGenerator;
 
   final FileSystem _fs;
-  final Future<SharedPreferences> Function() _sharedPreferences;
+  final Future<LocalStorage> Function() _localStorageProvider;
   final Future<String> Function() _getScreenshotStorageDirectoryPath;
   final WuidGenerator _wuidGenerator;
 
@@ -29,8 +29,8 @@ class PendingFeedbackItemStorage {
   /// Returns a list of all feedback items and their screenshot paths that are
   /// currently stored in the storage.
   Future<List<PendingFeedbackItem>> retrieveAllPendingItems() async {
-    final preferences = await _sharedPreferences();
-    final items = preferences.getStringList(_feedbackItemsKey) ?? [];
+    final localStorage = await _localStorageProvider();
+    final items = localStorage.getStringList(_feedbackItemsKey) ?? [];
     final List<PendingFeedbackItem> parsed = [];
     for (final item in items) {
       try {
@@ -87,8 +87,7 @@ class PendingFeedbackItemStorage {
         // save file to disk
         final screenshotsDir = await _getScreenshotStorageDirectoryPath();
         final uniqueFileName = _wuidGenerator.screenshotFilename();
-        final filePath = _fs.path
-            .normalize(_fs.path.join(screenshotsDir, '$uniqueFileName.png'));
+        final filePath = _fs.path.normalize(_fs.path.join(screenshotsDir, '$uniqueFileName.png'));
         final data = attachment.file.binaryData(_fs)!;
         await _fs.file(filePath).writeAsBytes(data);
         serializedAttachments.add(
@@ -118,8 +117,7 @@ class PendingFeedbackItemStorage {
 
     for (final item in items) {
       if (item.id == itemId) {
-        for (final PersistedAttachment attachment
-            in item.feedbackItem.attachments ?? []) {
+        for (final PersistedAttachment attachment in item.feedbackItem.attachments ?? []) {
           final eventuallyOnDisk = attachment.file;
           if (eventuallyOnDisk.isOnDisk) {
             final screenshot = _fs.file(eventuallyOnDisk.pathToFile);
@@ -148,15 +146,10 @@ class PendingFeedbackItemStorage {
       list.add(item);
 
       final List<PersistedAttachment> oldDiskAttachments =
-          (removed.feedbackItem.attachments ?? [])
-              .where((element) => element.file.isOnDisk)
-              .toList();
-      final newDiskAttachments = (item.feedbackItem.attachments ?? [])
-          .where((element) => element.file.isOnDisk)
-          .toList();
-      final uploaded = oldDiskAttachments
-          .where((element) => !newDiskAttachments.contains(element))
-          .toList();
+          (removed.feedbackItem.attachments ?? []).where((element) => element.file.isOnDisk).toList();
+      final newDiskAttachments =
+          (item.feedbackItem.attachments ?? []).where((element) => element.file.isOnDisk).toList();
+      final uploaded = oldDiskAttachments.where((element) => !newDiskAttachments.contains(element)).toList();
 
       /// Delete local files of attachments that have been uploaded
       for (final u in uploaded) {
@@ -177,10 +170,9 @@ class PendingFeedbackItemStorage {
   }
 
   Future<void> _savePendingItems(List<PendingFeedbackItem> items) async {
-    final preferences = await _sharedPreferences();
-    final List<String> values =
-        items.map((it) => serializePendingFeedbackItem(it)).toList();
-    await preferences.setStringList(_feedbackItemsKey, values);
+    final localStorage = await _localStorageProvider();
+    final List<String> values = items.map((it) => serializePendingFeedbackItem(it)).toList();
+    await localStorage.setStringList(_feedbackItemsKey, values);
   }
 
   Future<bool> contains(String id) async {

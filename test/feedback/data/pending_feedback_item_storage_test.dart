@@ -28,15 +28,13 @@ void main() {
       wuidGenerator = IncrementalIdGenerator();
       storage = PendingFeedbackItemStorage(
         fileSystem: fileSystem,
-        sharedPreferencesProvider: () async => prefs,
+        localStorageProvider: () async => prefs,
         dirPathProvider: () async => '.',
         wuidGenerator: wuidGenerator,
       );
     });
 
-    List<String> filesOnDisk() =>
-        fileSystem.directory('/').listSync().map((it) => it.path).toList()
-          ..sort();
+    List<String> filesOnDisk() => fileSystem.directory('/').listSync().map((it) => it.path).toList()..sort();
 
     test('can persist one feedback item', () async {
       await fileSystem.file('existing.png').writeAsBytes(kTransparentImage);
@@ -145,8 +143,7 @@ void main() {
       expect(filesOnDisk(), []);
     });
 
-    test('when has two items, preserves one while clearing the other one',
-        () async {
+    test('when has two items, preserves one while clearing the other one', () async {
       final first = createFeedback(
         attachments: [
           PersistedAttachment.screenshot(
@@ -181,9 +178,7 @@ void main() {
     });
 
     test('removes items which can not be parsed', () async {
-      await fileSystem
-          .file('<screenshot for invalid item>')
-          .writeAsBytes(kTransparentImage);
+      await fileSystem.file('<screenshot for invalid item>').writeAsBytes(kTransparentImage);
 
       final illegalSerializedItem = json.encode({
         // item has some required properties missing
@@ -195,9 +190,7 @@ void main() {
         'screenshotPath': '<screenshot for invalid item>',
       });
 
-      await fileSystem
-          .file('<existing item screenshot>')
-          .writeAsBytes(kTransparentImage);
+      await fileSystem.file('<existing item screenshot>').writeAsBytes(kTransparentImage);
 
       final pendingSerializedLegalItem = serializePendingFeedbackItem(
         PendingFeedbackItem(
@@ -205,8 +198,7 @@ void main() {
           feedbackItem: createFeedback(
             attachments: [
               PersistedAttachment.screenshot(
-                file:
-                    FileDataEventuallyOnDisk.file('<existing item screenshot>'),
+                file: FileDataEventuallyOnDisk.file('<existing item screenshot>'),
               ),
             ],
           ),
@@ -311,13 +303,11 @@ void main() {
 class InMemorySharedPreferences extends Fake implements SharedPreferences {
   final Map<String, Object?> _store = {};
 
-  final MethodInvocationCatcher setStringListInvocations =
-      MethodInvocationCatcher('setStringList');
+  final MethodInvocationCatcher setStringListInvocations = MethodInvocationCatcher('setStringList');
 
   @override
   Future<bool> setStringList(String key, List<String> value) async {
-    final mockedReturnValue =
-        setStringListInvocations.addAsyncMethodCall<bool>(args: [key, value]);
+    final mockedReturnValue = setStringListInvocations.addAsyncMethodCall<bool>(args: [key, value]);
     if (mockedReturnValue != null) {
       return mockedReturnValue.future;
     }
@@ -325,26 +315,22 @@ class InMemorySharedPreferences extends Fake implements SharedPreferences {
     return true;
   }
 
-  final MethodInvocationCatcher getStringListInvocations =
-      MethodInvocationCatcher('getStringList');
+  final MethodInvocationCatcher getStringListInvocations = MethodInvocationCatcher('getStringList');
 
   @override
   List<String>? getStringList(String key) {
-    final mockedReturnValue =
-        getStringListInvocations.addMethodCall<List<String>?>(args: [key]);
+    final mockedReturnValue = getStringListInvocations.addMethodCall<List<String>?>(args: [key]);
     if (mockedReturnValue != null) {
       return mockedReturnValue.value;
     }
     return _store[key] as List<String>?;
   }
 
-  final MethodInvocationCatcher setIntInvocations =
-      MethodInvocationCatcher('setInt');
+  final MethodInvocationCatcher setIntInvocations = MethodInvocationCatcher('setInt');
 
   @override
   Future<bool> setInt(String key, int value) async {
-    final mockedReturnValue =
-        setIntInvocations.addAsyncMethodCall<bool>(args: [key, value]);
+    final mockedReturnValue = setIntInvocations.addAsyncMethodCall<bool>(args: [key, value]);
     if (mockedReturnValue != null) {
       return mockedReturnValue.future;
     }
@@ -352,26 +338,22 @@ class InMemorySharedPreferences extends Fake implements SharedPreferences {
     return true;
   }
 
-  final MethodInvocationCatcher getIntInvocations =
-      MethodInvocationCatcher('getInt');
+  final MethodInvocationCatcher getIntInvocations = MethodInvocationCatcher('getInt');
 
   @override
   int? getInt(String key) {
-    final mockedReturnValue =
-        getIntInvocations.addMethodCall<int?>(args: [key]);
+    final mockedReturnValue = getIntInvocations.addMethodCall<int?>(args: [key]);
     if (mockedReturnValue != null) {
       return mockedReturnValue.value;
     }
     return _store[key] as int?;
   }
 
-  final MethodInvocationCatcher setStringInvocations =
-      MethodInvocationCatcher('setString');
+  final MethodInvocationCatcher setStringInvocations = MethodInvocationCatcher('setString');
 
   @override
   Future<bool> setString(String key, String value) async {
-    final mockedReturnValue =
-        setStringInvocations.addAsyncMethodCall<bool>(args: [key, value]);
+    final mockedReturnValue = setStringInvocations.addAsyncMethodCall<bool>(args: [key, value]);
     if (mockedReturnValue != null) {
       return mockedReturnValue.future;
     }
@@ -379,8 +361,7 @@ class InMemorySharedPreferences extends Fake implements SharedPreferences {
     return true;
   }
 
-  final MethodInvocationCatcher getStringInvocations =
-      MethodInvocationCatcher('getString');
+  final MethodInvocationCatcher getStringInvocations = MethodInvocationCatcher('getString');
 
   @override
   String? getString(String key) {
@@ -393,9 +374,7 @@ class InMemorySharedPreferences extends Fake implements SharedPreferences {
 }
 
 /// Creates string IDs that increment
-class IncrementalIdGenerator
-    with OnKeyCreatedNotifier
-    implements WuidGenerator {
+class IncrementalIdGenerator with OnKeyCreatedNotifier implements WuidGenerator {
   var _nextInt = 0;
 
   @override
@@ -436,8 +415,7 @@ FeedbackItem createFeedback({
       installId: '01234567890123456',
       platformBrightness: Brightness.light,
       platformDartVersion: '3.2.0',
-      platformGestureInsets:
-          WiredashWindowPadding(left: 0, top: 0, right: 0, bottom: 0),
+      platformGestureInsets: WiredashWindowPadding(left: 0, top: 0, right: 0, bottom: 0),
       platformLocale: 'en_US',
       platformOS: 'Android',
       platformOSVersion: '11',
@@ -446,8 +424,7 @@ FeedbackItem createFeedback({
       userId: 'Testy McTestFace',
       userEmail: 'email@example.com',
       windowInsets: WiredashWindowPadding(left: 0, top: 0, right: 0, bottom: 0),
-      windowPadding:
-          WiredashWindowPadding(left: 0, top: 0, right: 0, bottom: 0),
+      windowPadding: WiredashWindowPadding(left: 0, top: 0, right: 0, bottom: 0),
       windowPixelRatio: 2.0,
       windowSize: Size(800, 1200),
       windowTextScaleFactor: 1.0,

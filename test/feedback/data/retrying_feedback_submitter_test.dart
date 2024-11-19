@@ -32,7 +32,7 @@ void main() {
         fileSystem: fileSystem,
         wuidGenerator: idGenerator,
         dirPathProvider: () async => '.',
-        sharedPreferencesProvider: () async => preferences,
+        localStorageProvider: () async => preferences,
       );
       mockApi = MockWiredashApi();
       mockApi.uploadAttachmentInvocations.interceptor = (_) {
@@ -159,8 +159,7 @@ void main() {
       mockApi.sendFeedbackInvocations.verifyHasNoInvocation();
       final pendingItems = await storage.retrieveAllPendingItems();
       expect(pendingItems, hasLength(1));
-      final filePath =
-          pendingItems.first.feedbackItem.attachments!.first.file.pathToFile;
+      final filePath = pendingItems.first.feedbackItem.attachments!.first.file.pathToFile;
       expect(fileSystem.file(filePath).existsSync(), isTrue);
 
       // submission works now
@@ -178,8 +177,7 @@ void main() {
 
     test(
         'submit() - when has existing items and submits only the first one '
-        'successfully, does not remove the failed items from storage',
-        () async {
+        'successfully, does not remove the failed items from storage', () async {
       // Don't upload while submitting the items
       mockApi.sendFeedbackInvocations.interceptor = (iv) {
         throw "No internet";
@@ -222,9 +220,7 @@ void main() {
       expect(lastSendCall[0], item2);
     });
 
-    test(
-        'submitPendingFeedbackItems() - if fails, retries up to 8 times with exponential backoff',
-        () async {
+    test('submitPendingFeedbackItems() - if fails, retries up to 8 times with exponential backoff', () async {
       final item = createFeedback(message: '1');
 
       final initialTime = DateTime(2000, 01, 01, 00, 00, 00, 000);
@@ -248,8 +244,7 @@ void main() {
           async.elapse(const Duration(minutes: 5));
 
           // Sending one feedback item should be retried no more than 8 times.
-          final sendAttempts =
-              mockApi.sendFeedbackInvocations.invocations.where((iv) {
+          final sendAttempts = mockApi.sendFeedbackInvocations.invocations.where((iv) {
             return iv[0] == item;
           });
           expect(sendAttempts.length, 8);
@@ -295,9 +290,7 @@ void main() {
       );
     });
 
-    test(
-        'submitPendingFeedbackItems() - does not retry for UnauthenticatedWiredashApiException',
-        () async {
+    test('submitPendingFeedbackItems() - does not retry for UnauthenticatedWiredashApiException', () async {
       final item = createFeedback();
 
       final initialTime = DateTime(2000, 01, 01, 00, 00, 00, 000);
@@ -372,8 +365,7 @@ void main() {
       expect(await storage.retrieveAllPendingItems(), hasLength(0));
     });
 
-    test('submit() - does not retry when server reports unknown property',
-        () async {
+    test('submit() - does not retry when server reports unknown property', () async {
       final item = createFeedback();
 
       mockApi.sendFeedbackInvocations.interceptor = (iv) {

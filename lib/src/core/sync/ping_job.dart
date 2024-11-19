@@ -1,21 +1,21 @@
 import 'package:clock/clock.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:wiredash/src/_wiredash_internal.dart';
 import 'package:wiredash/src/core/options/environment_detector.dart';
+import 'package:wiredash/src/core/services/local_storage.dart';
 import 'package:wiredash/src/core/sync/sync_engine.dart';
 import 'package:wiredash/src/core/version.dart';
 import 'package:wiredash/src/metadata/meta_data_collector.dart';
 
 class PingJob extends Job {
   final WiredashApi Function() apiProvider;
-  final Future<SharedPreferences> Function() sharedPreferencesProvider;
+  final Future<LocalStorage> Function() localStorageProvider;
   final WuidGenerator Function() wuidGenerator;
   final MetaDataCollector Function() metaDataCollector;
   final EnvironmentDetector Function() environmentDetector;
 
   PingJob({
     required this.apiProvider,
-    required this.sharedPreferencesProvider,
+    required this.localStorageProvider,
     required this.wuidGenerator,
     required this.metaDataCollector,
     required this.environmentDetector,
@@ -89,16 +89,16 @@ class PingJob extends Job {
 
   /// Silences the sdk, prevents automatic pings on app startup until the time is over
   Future<void> _silenceUntil(DateTime dateTime) async {
-    final preferences = await sharedPreferencesProvider();
+    final preferences = await localStorageProvider();
     preferences.setInt(silenceUntilKey, dateTime.millisecondsSinceEpoch);
     syncDebugPrint('Silenced Wiredash until $dateTime');
   }
 
   /// `true` when automatic pings should be prevented
   Future<bool> _isSilenced(DateTime now) async {
-    final preferences = await sharedPreferencesProvider();
+    final localStorage = await localStorageProvider();
 
-    final int? millis = preferences.getInt(silenceUntilKey);
+    final int? millis = localStorage.getInt(silenceUntilKey);
     if (millis == null) {
       return false;
     }
@@ -111,8 +111,8 @@ class PingJob extends Job {
   }
 
   Future<DateTime?> _getLastSuccessfulPing() async {
-    final preferences = await sharedPreferencesProvider();
-    final lastPingInt = preferences.getInt(lastSuccessfulPingKey);
+    final localStorage = await localStorageProvider();
+    final lastPingInt = localStorage.getInt(lastSuccessfulPingKey);
     if (lastPingInt == null) {
       return null;
     }
@@ -120,7 +120,7 @@ class PingJob extends Job {
   }
 
   Future<void> _saveLastSuccessfulPing(DateTime now) async {
-    final preferences = await sharedPreferencesProvider();
-    await preferences.setInt(lastSuccessfulPingKey, now.millisecondsSinceEpoch);
+    final localStorage = await localStorageProvider();
+    await localStorage.setInt(lastSuccessfulPingKey, now.millisecondsSinceEpoch);
   }
 }

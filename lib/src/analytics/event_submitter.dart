@@ -1,10 +1,10 @@
 import 'dart:async';
 
 import 'package:clock/clock.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:wiredash/src/_wiredash_internal.dart';
 import 'package:wiredash/src/analytics/event_store.dart';
 import 'package:wiredash/src/core/network/send_events_request.dart';
+import 'package:wiredash/src/core/services/local_storage.dart';
 import 'package:wiredash/src/utils/delay.dart';
 
 /// Abstract interface for submitting events to the backend
@@ -13,7 +13,7 @@ import 'package:wiredash/src/utils/delay.dart';
 /// - [DirectEventSubmitter] for immediate submission of events (usually web)
 /// - [DebounceEventSubmitter] for batching events within a certain time frame (usually mobile)
 abstract class EventSubmitter {
-  /// Submits all pending events in [AnalyticsEventStore] ([SharedPreferences]) to the backend
+  /// Submits all pending events in [AnalyticsEventStore] ([LocalStorage]) to the backend
   ///
   /// If [force] is `true`, the events are submitted immediately, regardless of the throttle duration.
   Future<void> submitEvents({bool? force});
@@ -91,8 +91,7 @@ class DebounceEventSubmitter implements EventSubmitter {
       return;
     }
 
-    final minInterval =
-        _initialSubmitted ? throttleDuration : initialThrottleDuration;
+    final minInterval = _initialSubmitted ? throttleDuration : initialThrottleDuration;
     assert(_delay == null);
     if (_lastSubmit == null) {
       _delay = Delay(minInterval);

@@ -1,16 +1,11 @@
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:wiredash/src/_wiredash_internal.dart';
 import 'package:wiredash/src/analytics/event_submitter.dart';
 import 'package:wiredash/src/core/sync/sync_engine.dart';
 
 class EventUploadJob extends Job {
-  final Future<SharedPreferences> Function() sharedPreferencesProvider;
   final EventSubmitter Function() eventSubmitter;
 
-  EventUploadJob({
-    required this.sharedPreferencesProvider,
-    required this.eventSubmitter,
-  });
+  EventUploadJob({required this.eventSubmitter});
 
   @override
   bool shouldExecute(SdkEvent event) {

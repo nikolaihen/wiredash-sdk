@@ -102,8 +102,7 @@ void main() {
         return Scaffold(
           body: ElevatedButton(
             onPressed: () async {
-              await Wiredash.of(context)
-                  .trackEvent('test_event', data: {'param1': 'value1'});
+              await Wiredash.of(context).trackEvent('test_event', data: {'param1': 'value1'});
             },
             child: const Text('Send Event'),
           ),
@@ -123,9 +122,7 @@ void main() {
     expect(event.eventData, {'param1': 'value1'});
   });
 
-  testWidgets(
-      'Wiredash.trackEvent automatically users the environment from the widget',
-      (tester) async {
+  testWidgets('Wiredash.trackEvent automatically users the environment from the widget', (tester) async {
     final robot = WiredashTestRobot(tester);
     await robot.launchApp(
       environment: 'custom',
@@ -153,8 +150,7 @@ void main() {
     expect(event.environment, 'custom');
   });
 
-  testWidgets('sendEvent (static) to different environment from Widget',
-      (tester) async {
+  testWidgets('sendEvent (static) to different environment from Widget', (tester) async {
     final robot = WiredashTestRobot(tester);
     await robot.launchApp(
       environment: 'production',
@@ -188,8 +184,7 @@ void main() {
 
   testWidgets(
       'sendEvent top-level with two instances - '
-      'forwards to the first registered with warning - order 1',
-      (tester) async {
+      'forwards to the first registered with warning - order 1', (tester) async {
     final robot = WiredashTestRobot(tester);
     await robot.launchApp(
       wrapWithWiredash: false,
@@ -226,18 +221,15 @@ void main() {
     await robot.tapText('Send Event');
     await tester.pumpSmart();
 
-    final api1 =
-        robot.servicesWith(projectId: 'project1').api as MockWiredashApi;
-    final api2 =
-        robot.servicesWith(projectId: 'project2').api as MockWiredashApi;
+    final api1 = robot.servicesWith(projectId: 'project1').api as MockWiredashApi;
+    final api2 = robot.servicesWith(projectId: 'project2').api as MockWiredashApi;
     api1.sendEventsInvocations.verifyInvocationCount(1);
     api2.sendEventsInvocations.verifyInvocationCount(0);
   });
 
   testWidgets(
       'sendEvent top-level with two instances - '
-      'forwards to the first registered with warning - order 2',
-      (tester) async {
+      'forwards to the first registered with warning - order 2', (tester) async {
     final robot = WiredashTestRobot(tester);
     await robot.launchApp(
       wrapWithWiredash: false,
@@ -274,16 +266,13 @@ void main() {
     await robot.tapText('Send Event');
     await tester.pumpSmart();
 
-    final api1 =
-        robot.servicesWith(projectId: 'project1').api as MockWiredashApi;
-    final api2 =
-        robot.servicesWith(projectId: 'project2').api as MockWiredashApi;
+    final api1 = robot.servicesWith(projectId: 'project1').api as MockWiredashApi;
+    final api2 = robot.servicesWith(projectId: 'project2').api as MockWiredashApi;
     api1.sendEventsInvocations.verifyInvocationCount(0);
     api2.sendEventsInvocations.verifyInvocationCount(1);
   });
 
-  testWidgets('two instances - picks first project, ignores environment',
-      (tester) async {
+  testWidgets('two instances - picks first project, ignores environment', (tester) async {
     final robot = WiredashTestRobot(tester);
     await robot.launchApp(
       wrapWithWiredash: false,
@@ -323,9 +312,7 @@ void main() {
     await tester.pumpSmart();
 
     // picks first matching projectId, environment does not matter
-    final api = robot
-        .servicesWith(projectId: 'project1', environment: 'env-a')
-        .api as MockWiredashApi;
+    final api = robot.servicesWith(projectId: 'project1', environment: 'env-a').api as MockWiredashApi;
     final lastEvents = api.sendEventsInvocations.latest;
     final events = lastEvents[0] as List<RequestEvent>?;
     expect(events, hasLength(1));
@@ -334,8 +321,7 @@ void main() {
     expect(event.environment, 'env-b');
   });
 
-  testWidgets('two instances - picks correct project, ignores environment',
-      (tester) async {
+  testWidgets('two instances - picks correct project, ignores environment', (tester) async {
     final robot = WiredashTestRobot(tester);
     await robot.launchApp(
       wrapWithWiredash: false,
@@ -378,8 +364,7 @@ void main() {
     await robot.tapText('Send Event');
     await tester.pumpSmart();
 
-    final api =
-        robot.servicesWith(projectId: 'project2').api as MockWiredashApi;
+    final api = robot.servicesWith(projectId: 'project2').api as MockWiredashApi;
     final lastEvents = api.sendEventsInvocations.latest;
     final events = lastEvents[0] as List<RequestEvent>?;
     expect(events, hasLength(1));
@@ -391,8 +376,7 @@ void main() {
 
   testWidgets(
       'two instances - even when environment matches, '
-      'uses first Wiredash instance because no projectId is set',
-      (tester) async {
+      'uses first Wiredash instance because no projectId is set', (tester) async {
     final robot = WiredashTestRobot(tester);
     await robot.launchApp(
       wrapWithWiredash: false,
@@ -434,8 +418,7 @@ void main() {
     await robot.tapText('Send Event');
     await tester.pumpSmart();
 
-    final api1 =
-        robot.servicesWith(projectId: 'project1').api as MockWiredashApi;
+    final api1 = robot.servicesWith(projectId: 'project1').api as MockWiredashApi;
     api1.sendEventsInvocations.verifyInvocationCount(1);
     final lastEvents = api1.sendEventsInvocations.latest;
     final events = lastEvents[0] as List<RequestEvent>?;
@@ -444,8 +427,7 @@ void main() {
     expect(event.eventName, 'test_event');
     expect(event.environment, 'env-b');
 
-    final api2 =
-        robot.servicesWith(projectId: 'project2').api as MockWiredashApi;
+    final api2 = robot.servicesWith(projectId: 'project2').api as MockWiredashApi;
     api2.sendEventsInvocations.verifyInvocationCount(0);
   });
 
@@ -464,8 +446,7 @@ void main() {
         );
       },
     );
-    robot.mockServices.mockApi.sendEventsInvocations.interceptor =
-        (invocation) async {
+    robot.mockServices.mockApi.sendEventsInvocations.interceptor = (invocation) async {
       throw 'Blocked by ad blocker';
     };
 
@@ -526,8 +507,7 @@ void main() {
         );
       },
     );
-    robot.mockServices.mockApi.sendEventsInvocations.interceptor =
-        (invocation) async {
+    robot.mockServices.mockApi.sendEventsInvocations.interceptor = (invocation) async {
       throw 'offline';
     };
 
@@ -538,8 +518,7 @@ void main() {
 
     errors.restoreDefaultErrorHandlers();
     expect(errors.errors, isEmpty);
-    final presentErrors = errors.warnings
-        .where((element) => !element.toString().contains('offline'));
+    final presentErrors = errors.warnings.where((element) => !element.toString().contains('offline'));
     expect(presentErrors, isEmpty);
 
     // always save the last events
@@ -556,8 +535,7 @@ void main() {
     );
   });
 
-  testWidgets('default events are submitted with the next Wiredash instance',
-      (tester) async {
+  testWidgets('default events are submitted with the next Wiredash instance', (tester) async {
     final robot = WiredashTestRobot(tester);
     robot.setupMocks();
     await robot.regenerateAnalyticsId();
@@ -585,7 +563,7 @@ void main() {
 
     // event is saved locally for the "default" project
     final eventStore = PersistentAnalyticsEventStore(
-      sharedPreferences: SharedPreferences.getInstance,
+      localStorageProvider: SharedPreferences.getInstance,
     );
     final eventsOnDisk = await eventStore.getEvents('default');
     expect(eventsOnDisk, hasLength(1));
@@ -597,9 +575,7 @@ void main() {
     robot.mockServices.mockApi.sendEventsInvocations.verifyInvocationCount(1);
   });
 
-  testWidgets(
-      'project events are only submitted by the correct Wiredash instance',
-      (tester) async {
+  testWidgets('project events are only submitted by the correct Wiredash instance', (tester) async {
     final robot = WiredashTestRobot(tester);
     robot.setupMocks();
     await robot.regenerateAnalyticsId();
@@ -622,7 +598,7 @@ void main() {
 
     // event is saved locally for project1
     final eventStore = PersistentAnalyticsEventStore(
-      sharedPreferences: SharedPreferences.getInstance,
+      localStorageProvider: SharedPreferences.getInstance,
     );
     final eventsOnDisk = await eventStore.getEvents('project1');
     expect(eventsOnDisk, hasLength(1));
@@ -668,7 +644,7 @@ void main() {
     await tester.pumpSmart();
 
     final eventStore = PersistentAnalyticsEventStore(
-      sharedPreferences: SharedPreferences.getInstance,
+      localStorageProvider: SharedPreferences.getInstance,
     );
     final eventsOnDisk1 = await eventStore.getEvents('projectX');
     expect(eventsOnDisk1, hasLength(2));
@@ -678,8 +654,7 @@ void main() {
 
     // restart the app
     await robot.launchApp(projectId: 'projectX');
-    robot.mockServices.mockApi.sendEventsInvocations.interceptor =
-        (invocation) async {
+    robot.mockServices.mockApi.sendEventsInvocations.interceptor = (invocation) async {
       throw 'offline';
     };
     final eventsOnDisk2 = await robot.services.eventStore.getEvents('projectX');
@@ -696,8 +671,7 @@ void main() {
 
     // Tried to submit only the one that is not older than 3 days
     robot.mockServices.mockApi.sendEventsInvocations.verifyInvocationCount(1);
-    final submittedEvents = robot.mockServices.mockApi.sendEventsInvocations
-        .latest[0]! as List<RequestEvent>;
+    final submittedEvents = robot.mockServices.mockApi.sendEventsInvocations.latest[0]! as List<RequestEvent>;
     expect(submittedEvents, hasLength(1));
 
     // keep only that one on disk because submission failed
@@ -709,8 +683,7 @@ void main() {
     testWidgets('submit events after app moves to background', (tester) async {
       final robot = WiredashTestRobot(tester);
       await robot.launchApp();
-      robot.mockServices.mockApi.sendEventsInvocations.interceptor =
-          (invocation) async {
+      robot.mockServices.mockApi.sendEventsInvocations.interceptor = (invocation) async {
         throw 'offline';
       };
       await robot.triggerAnalyticsEvent();
@@ -722,9 +695,7 @@ void main() {
       robot.mockServices.mockApi.sendEventsInvocations.verifyInvocationCount(2);
     });
 
-    testWidgets(
-        'send first event immediately, then after 5s, then after 30s continuously',
-        (tester) async {
+    testWidgets('send first event immediately, then after 5s, then after 30s continuously', (tester) async {
       final start = clock.now();
       final robot = WiredashTestRobot(tester);
       await robot.launchApp(useDirectEventSubmitter: false);
@@ -735,8 +706,7 @@ void main() {
       final diff = clock.now().difference(start);
       expect(diff, const Duration(seconds: 65)); // one event each second
 
-      final List<AssertableInvocation> calls =
-          robot.mockServices.mockApi.sendEventsInvocations.invocations;
+      final List<AssertableInvocation> calls = robot.mockServices.mockApi.sendEventsInvocations.invocations;
       final batches = calls.map((e) => e[0]! as List<RequestEvent>).toList();
       expect(batches, hasLength(3));
       expect(batches[0], hasLength(5));
@@ -744,8 +714,7 @@ void main() {
       expect(batches[2], hasLength(30));
     });
 
-    testWidgets('send event immediately when no event was sent for 30s',
-        (tester) async {
+    testWidgets('send event immediately when no event was sent for 30s', (tester) async {
       final robot = WiredashTestRobot(tester);
       await robot.launchApp(useDirectEventSubmitter: false);
 
@@ -757,8 +726,7 @@ void main() {
       await robot.triggerAnalyticsEvent();
       await tester.pumpSmart(const Duration(milliseconds: 1));
 
-      final List<AssertableInvocation> calls =
-          robot.mockServices.mockApi.sendEventsInvocations.invocations;
+      final List<AssertableInvocation> calls = robot.mockServices.mockApi.sendEventsInvocations.invocations;
       final batches = calls.map((e) => e[0]! as List<RequestEvent>).toList();
       expect(batches, hasLength(2));
       expect(batches[0], hasLength(1));
@@ -771,8 +739,7 @@ void main() {
     await robot.launchApp();
 
     final errors = captureFlutterErrors();
-    robot.mockServices.mockApi.sendEventsInvocations.interceptor =
-        (invocation) async {
+    robot.mockServices.mockApi.sendEventsInvocations.interceptor = (invocation) async {
       final httpClient = MockClient((request) async {
         final body = jsonEncode(
           {
@@ -798,8 +765,7 @@ void main() {
         // }
         return Response.bytes(body.codeUnits, 200);
       });
-      final context =
-          ApiClientContext(httpClient: httpClient, secret: '', projectId: '');
+      final context = ApiClientContext(httpClient: httpClient, secret: '', projectId: '');
       return postSendEvents(
         context,
         'url',
@@ -837,10 +803,8 @@ void main() {
     await robot.launchApp();
 
     final errors = captureFlutterErrors();
-    robot.mockServices.mockApi.sendEventsInvocations.interceptor =
-        (invocation) async {
-      const body =
-          '{"errorCode": 2201, "errorMessage": "can not process events at the moment"}';
+    robot.mockServices.mockApi.sendEventsInvocations.interceptor = (invocation) async {
+      const body = '{"errorCode": 2201, "errorMessage": "can not process events at the moment"}';
       final response = Response(body, 400);
       throw CouldNotHandleRequestException(response: response);
     };
@@ -876,14 +840,12 @@ void main() {
     await robot.launchApp();
 
     final errors = captureFlutterErrors();
-    robot.mockServices.mockApi.sendEventsInvocations.interceptor =
-        (invocation) async {
+    robot.mockServices.mockApi.sendEventsInvocations.interceptor = (invocation) async {
       final httpClient = MockClient((request) async {
         return Response.bytes([], 401); // unauthorized
       });
 
-      final context =
-          ApiClientContext(httpClient: httpClient, secret: '', projectId: '');
+      final context = ApiClientContext(httpClient: httpClient, secret: '', projectId: '');
       return postSendEvents(
         context,
         'url',
@@ -903,14 +865,12 @@ void main() {
     expect(eventsOnDisk, hasLength(0));
   });
 
-  testWidgets('Server could not handle requests - statuscode 500',
-      (tester) async {
+  testWidgets('Server could not handle requests - statuscode 500', (tester) async {
     final robot = WiredashTestRobot(tester);
     await robot.launchApp();
 
     final errors = captureFlutterErrors();
-    robot.mockServices.mockApi.sendEventsInvocations.interceptor =
-        (invocation) async {
+    robot.mockServices.mockApi.sendEventsInvocations.interceptor = (invocation) async {
       throw WiredashApiException(response: Response('', 500));
     };
 
@@ -928,15 +888,12 @@ void main() {
     expect(eventsOnDisk, hasLength(1));
   });
 
-  testWidgets(
-      'server drops custom events of free projects - Reports PaidFeatureException once',
-      (tester) async {
+  testWidgets('server drops custom events of free projects - Reports PaidFeatureException once', (tester) async {
     final robot = WiredashTestRobot(tester);
     await robot.launchApp();
 
     final errors = captureFlutterErrors();
-    robot.mockServices.mockApi.sendEventsInvocations.interceptor =
-        (invocation) async {
+    robot.mockServices.mockApi.sendEventsInvocations.interceptor = (invocation) async {
       final httpClient = MockClient((request) async {
         final body = jsonEncode(
           {
@@ -952,8 +909,7 @@ void main() {
         );
         return Response.bytes(body.codeUnits, 200);
       });
-      final context =
-          ApiClientContext(httpClient: httpClient, secret: '', projectId: '');
+      final context = ApiClientContext(httpClient: httpClient, secret: '', projectId: '');
       return postSendEvents(
         context,
         'url',
@@ -996,8 +952,7 @@ void main() {
     await robot.launchApp();
 
     bool thrown = false;
-    robot.mockServices.mockApi.sendEventsInvocations.interceptor =
-        (invocation) async {
+    robot.mockServices.mockApi.sendEventsInvocations.interceptor = (invocation) async {
       thrown = true;
       throw const SocketException('no internet');
     };
@@ -1055,8 +1010,7 @@ void main() {
     final analytics = WiredashAnalytics();
     await analytics.trackEvent('test_event');
     final events = await state.debugServices.eventStore.getEvents(null);
-    final testEvent = events.values
-        .firstWhereOrNull((event) => event.eventName == 'test_event');
+    final testEvent = events.values.firstWhereOrNull((event) => event.eventName == 'test_event');
     expect(testEvent!.environment, 'custom');
   });
 }

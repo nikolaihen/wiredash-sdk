@@ -9,7 +9,7 @@ void main() {
     SharedPreferences.setMockInitialValues({});
     final errors = captureFlutterErrors();
     final eventStore = PersistentAnalyticsEventStore(
-      sharedPreferences: SharedPreferences.getInstance,
+      localStorageProvider: SharedPreferences.getInstance,
     );
 
     final prefs = await SharedPreferences.getInstance();
